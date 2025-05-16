@@ -432,16 +432,30 @@ def train(model: torch.nn.Module,
 
 
 
-def predicted_class(image_path:str,model,class_names, transform):
-    image = Image.open(image_path).convert('RGB')
-    image = transform(image).unsqeeze(0)
-
-    image.to(device)
-
+def predicted_class(image_path:str, model, class_names, transform):
+    """Predicts the class of an image given its path, model, class names, and transforms."""
+    # Ensure the model is in evaluation mode
     model.eval()
 
-    with torch.inference_mode():
-        output = model(image)
-        pred_idx = torch.argmax(output, dim=1).item()
+    # Open the image
+    image = Image.open(image_path).convert('RGB')
 
-        return class_names[pred_idx]
+    # Apply transformations
+    image = transform(image).unsqueeze(0) # Add a batch dimension
+
+    # Move image to the correct device
+    device = next(model.parameters()).device # Get model's device
+    image = image.to(device)
+
+    # Make a prediction
+    with torch.no_grad():
+        output = model(image)
+        probabilities = torch.softmax(output, dim=1)
+        predicted_prob, predicted_idx = torch.max(probabilities, dim=1)
+
+    # Get the predicted class name
+    predicted_class_name = class_names[predicted_idx.item()]
+
+    print(f"Predicted class: {predicted_class_name}")
+    print(f"Prediction probability: {predicted_prob.item():.4f}")
+
