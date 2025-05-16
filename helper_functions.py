@@ -429,3 +429,19 @@ def train(model: torch.nn.Module,
         "test_acc": test_accuracies,
         "time": end - start
     }
+
+
+
+def predicted_class(image_path:str,model,class_names, transform):
+    image = Image.open(image_path).convert('RGB')
+    image = transform(image).unsqeeze(0)
+
+    image.to(device)
+
+    model.eval()
+
+    with torch.inference_mode():
+        output = model(image)
+        pred_idx = torch.argmax(output, dim=1).item()
+
+        return class_names[pred_idx]
